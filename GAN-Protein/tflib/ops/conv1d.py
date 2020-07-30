@@ -86,13 +86,15 @@ def Conv1D(name, input_dim, output_dim, filter_size, inputs, he_init=True, mask_
         if mask_type is not None:
             with tf.name_scope('filter_mask'):
                 filters = filters * mask
-
+        inputs = tf.transpose(inputs, [0, 2, 1])
+        # print(inputs.shape)
+        # print(filters.shape)
         result = tf.nn.conv1d(
             value=inputs, 
             filters=filters, 
             stride=stride,
             padding='SAME',
-            data_format='NCW'
+            data_format='NWC'
         )
 
         if biases:
@@ -104,6 +106,8 @@ def Conv1D(name, input_dim, output_dim, filter_size, inputs, he_init=True, mask_
             # result = result + _biases
 
             result = tf.expand_dims(result, 3)
+            result = tf.transpose(result, [0, 2, 3, 1])
+            # print(result.shape, _biases.shape)
             result = tf.nn.bias_add(result, _biases, data_format='NCHW')
             result = tf.squeeze(result)
 

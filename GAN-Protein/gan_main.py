@@ -22,7 +22,7 @@ LAMBDA = 10                                    # Gradient penalty lambda hyperpa
 
 
 # Construct Model
-def model(lines):
+def model(lines_ch, lines):
     # Construct Input data
     real_inputs = tf.placeholder(tf.float32, shape=[BATCH_SIZE, SEQ_LEN, len(charmap)])
     fake_inputs = Generator(BATCH_SIZE)
@@ -53,15 +53,16 @@ def model(lines):
     gen_train_op = tf.train.AdamOptimizer(learning_rate=1e-4, beta1=0.5, beta2=0.9).minimize(gen_cost, var_list=gen_params)
     disc_train_op = tf.train.AdamOptimizer(learning_rate=1e-4, beta1=0.5, beta2=0.9).minimize(disc_cost, var_list=disc_params)
 
-    # During training we monitor JS divergence between the true & generated ngram distributions for n=1,2,3,4.
+    # During training we monitor JS divergence between the true & generated ngram distributions for n=1,2,3,4.// 2/3/4/5
     # To get an idea of the optimal values, we evaluate these statistics on a held-out set first.
-    # true_char_ngram_lms = [language_helpers.NgramLanguageModel(i+1, lines[100*BATCH_SIZE:], tokenize=False) for i in range(1, 5)]
-    # validation_char_ngram_lms = [language_helpers.NgramLanguageModel(i+1, lines[:100*BATCH_SIZE], tokenize=False) for i in range(1, 5)]
-    # for i in range(0, 4):
-    #     print("validation set JSD for n={}: {}".format(i+2, true_char_ngram_lms[i].js_with(validation_char_ngram_lms[i])))
-    # true_char_ngram_lms = [language_helpers.NgramLanguageModel(i+1, lines[:], tokenize=False) for i in range(1, 5)]
+    true_char_ngram_lms = [language_helpers.NgramLanguageModel(i, lines_ch[100*BATCH_SIZE:], tokenize=False) for i in range(2, 6)]
+    validation_char_ngram_lms = [language_helpers.NgramLanguageModel(i, lines_ch[:100*BATCH_SIZE], tokenize=False) for i in range(2, 6)]
+    for i in range(0, 4):
+        print("validation set JSD for n={}: {}".format(i+2, true_char_ngram_lms[i].js_with(validation_char_ngram_lms[i])))
+    true_char_ngram_lms = [language_helpers.NgramLanguageModel(i, lines_ch[:], tokenize=False) for i in range(2, 6)]
 
     # Start run the graph
+    saver = tf.train.Saver()
     with tf.Session() as session:
         # initialize
         session.run(tf.initialize_all_variables())
@@ -94,7 +95,6 @@ def model(lines):
             _disc_cost = 0
             for i in range(CRITIC_ITERS):
                 _data = next(gen)
-                print(_data.shape)
                 _disc_cost, _ = session.run([disc_cost, disc_train_op], feed_dict={real_inputs: _data})
             # Plot curve
             lib.plot.plot('time', time.time() - start_time)
@@ -102,6 +102,7 @@ def model(lines):
             lib.plot.plot('train disc cost', _disc_cost)
 
             if iteration % 100 == 99:
+                saver.save(session, 'checkpoint/Mymodel_'+str(iteration))
                 samples = []
                 for i in range(20):
                     samples.extend(generate_samples())
@@ -120,11 +121,11 @@ def model(lines):
 if __name__ == '__main__':
 
     # configuration GPU enviroment
-    # config = tf.ConfigProto()
-    # config.gpu_options.per_process_gpu_memory_fraction = 0.3
-    # session = tf.Session(config=config)
+    config = tf.ConfigProto()
+    config.gpu_options.per_process_gpu_memory_fraction = 0.3
+    session = tf.Session(config=config)
     # Load data
-    lines = LoadData()
+    lines_ch, lines = LoadData()
     # Run model
-    model(lines)
+    model(lines_ch, lines)
 
