@@ -97,7 +97,7 @@ def model(lines_ch, lines):
             _disc_cost = 0
             for i in range(CRITIC_ITERS):
                 _data = next(gen)
-                _disc_cost, _ = session.run([disc_cost, disc_train_op], feed_dict={real_inputs: _data})
+                _disc_cost, _ = session.run([disc_cost, disc_train_op], feed_dict={real_inputs: _data, real_label: np.ones([BATCH_SIZE, 10], dtype=int) })
             # Plot curve
             lib.plot.plot('time', time.time() - start_time)
             lib.plot.plot('train gen cost', _gen_cost)

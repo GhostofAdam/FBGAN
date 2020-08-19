@@ -23,8 +23,7 @@ def ResBlock(name, inputs):
     return inputs + (0.3*output)
 
 
-def Generator(z, y):
-    
+def Generator(z, y, isSupervised = True):
     output = tf.concat([z, y], 1)
     output = li.Linear('Generator.Input', 64 + 10, SEQ_LEN*DIM, output)
     output = tf.reshape(output, [-1, DIM, SEQ_LEN])
@@ -40,7 +39,7 @@ def Generator(z, y):
     return output
 
 
-def Discriminator(inputs, y):
+def Discriminator(inputs, y, isSupervised = True):
     output = tf.transpose(inputs, [0, 2, 1])
     output = cv.Conv1D('Discriminator.Input', len(charmap), DIM, 1, output)
     output = ResBlock('Discriminator.1', output)
